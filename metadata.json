@@ -1,0 +1,7 @@
+{
+  "name": "Copy of GreenPlate - Fight Food Waste",
+  "description": "A professional mobile-first platform connecting users with surplus campus food at discounted prices using AI-powered analysis and real-time tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
