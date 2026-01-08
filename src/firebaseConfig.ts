@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC3wLvVscsvvSZE_tjRK56miuKM83Sg5K0",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "greenplate-242c9.firebaseapp.com",
   projectId: "greenplate-242c9",
   storageBucket: "greenplate-242c9.firebasestorage.app",
