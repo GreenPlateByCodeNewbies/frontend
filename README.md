@@ -2,7 +2,7 @@
 
 **Sustainable Food Waste Reduction Platform**
 
-A React Native-based application that connects students and staff with surplus cafeteria food, reducing waste and promoting sustainability.
+A React-based web application that connects students and staff with surplus cafeteria food, reducing waste and promoting sustainability.
 
 ## ✨ Features
 
