@@ -1,42 +1,40 @@
 import { createPaymentOrder } from './api';
 
 interface CartItem {
-  item_id: string;  // Changed from 'id' to match
+  item_id: string;
   quantity: number;
 }
-
 export const initiatePayment = async (
   cartItems: CartItem[],
   stallId: string,
   userEmail: string,
   userName: string
-): Promise<{ success: boolean; paymentId?: string; error?: string }> => {
+): Promise<{ 
+  success: boolean; 
+  paymentId?: string; 
+  orderId?: string;    
+  signature?: string;  
+  error?: string 
+}> => {
   try {
     console.log('🔄 Creating payment order...', { stallId, items: cartItems });
     
-    // Cart items already have item_id, just pass them through
     const orderData = await createPaymentOrder(stallId, cartItems);
 
     console.log('✅ Order created:', orderData);
 
-    // Load Razorpay if not already loaded
     if (!(window as any).Razorpay) {
-      console.log('📦 Loading Razorpay SDK...');
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
       document.body.appendChild(script);
 
       await new Promise((resolve, reject) => {
-        script.onload = () => {
-          console.log('✅ Razorpay SDK loaded');
-          resolve(true);
-        };
+        script.onload = () => resolve(true);
         script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
       });
     }
 
-    // Razorpay options
     const options = {
       key: orderData.key_id,
       amount: orderData.amount,
@@ -48,12 +46,8 @@ export const initiatePayment = async (
         email: userEmail,
         name: userName,
       },
-      theme: {
-        color: '#10B981'
-      },
+      theme: { color: '#10B981' },
     };
-
-    console.log('🚀 Opening Razorpay checkout...');
 
     return new Promise((resolve) => {
       try {
@@ -61,9 +55,12 @@ export const initiatePayment = async (
         
         rzp.on('payment.success', (response: any) => {
           console.log('✅ Payment success:', response);
+          // 2. Resolve ALL required verification data
           resolve({
             success: true,
-            paymentId: response.razorpay_payment_id
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id,
+            signature: response.razorpay_signature
           });
         });
 
@@ -77,7 +74,6 @@ export const initiatePayment = async (
 
         rzp.open();
       } catch (error: any) {
-        console.error('❌ Error opening Razorpay:', error);
         resolve({
           success: false,
           error: error.message || 'Failed to open payment gateway'
@@ -99,11 +95,12 @@ export const initiatePayment = async (
         success: false,
         error: 'Cannot connect to server'
       };
-    } else {
+    } 
+    else {
       return {
         success: false,
-        error: error.message || 'Payment failed'
+        error: error.response?.data?.message || error.message || 'Payment failed'
       };
     }
   }
-};
+}
