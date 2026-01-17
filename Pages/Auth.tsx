@@ -63,6 +63,7 @@ const Auth: React.FC = () => {
       // =========================
       let staffVerified = false;
       let staffActivated = false;
+      let profileFetched = false;
 
       try {
         // Step 1: Verify staff existence
@@ -86,6 +87,7 @@ const Auth: React.FC = () => {
           '/staff/me',
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        profileFetched = true;
 
         const profile = res.data;
 
@@ -100,12 +102,15 @@ const Auth: React.FC = () => {
         setVerified(true);
         setOnboarded(true);
       } catch (staffError: any) {
-        // Rollback: If activation or profile fetch failed after verification,
-        // we need to handle cleanup
+        // Rollback: Handle inconsistent states based on which step failed
         if (staffVerified && !staffActivated) {
           console.error('Staff verification succeeded but activation failed. Manual cleanup may be required.');
           // Note: Ideally, the backend should handle this transactionally
           // or provide a deactivate/rollback endpoint
+        } else if (staffActivated && !profileFetched) {
+          console.error('Staff activation succeeded but profile fetch failed. User may need to re-login.');
+          // The backend has activated the staff, but we couldn't fetch the profile
+          // User should be able to retry by logging in again
         }
         
         // Re-throw the error to be handled by the outer catch block
