@@ -88,14 +88,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // 🔍 Debugging: Check what the backend is actually sending
       console.log("API Response for Orders:", data);
 
-      // 🛡️ FIX: Handle different response structures
-      if (data.orders && Array.isArray(data.orders)) {
-        setOrders(data.orders); // Case 1: Backend returns { orders: [...] }
+      // 🛡️ FIX: Handle different response structures safely
+      if (data && typeof data === "object" && "orders" in data && Array.isArray((data as any).orders)) {
+        setOrders((data as any).orders); // Case 1: Backend returns { orders: [...] }
       } else if (Array.isArray(data)) {
-        setOrders(data);        // Case 2: Backend returns [...] (Direct array)
+        setOrders(data);                 // Case 2: Backend returns [...] (Direct array)
       } else {
         console.warn("Unexpected orders format, defaulting to empty list");
-        setOrders([]);          // Fallback to prevent crash
+        setOrders([]);                   // Fallback to prevent crash
       }
 
     } catch (err) {
