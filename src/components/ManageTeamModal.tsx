@@ -17,6 +17,77 @@ interface StaffMember {
   status: string;
 }
 
+interface ConfirmDialogProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onCancel}
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        />
+        
+        {/* Dialog */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.2 }}
+          className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 z-10"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+              <AlertCircle size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">{title}</h3>
+              <p className="text-sm text-gray-600">{message}</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onCancel}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors text-sm"
+            >
+              {cancelText}
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors text-sm"
+            >
+              {confirmText}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
+
 const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +100,12 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editEmail, setEditEmail] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Confirmation Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; uid: string | null }>({
+    isOpen: false,
+    uid: null,
+  });
 
   useEffect(() => {
     fetchStaff();
@@ -61,8 +138,6 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
   };
 
   const handleDelete = async (uid: string) => {
-    if (!confirm("Are you sure you want to remove this staff member?")) return;
-
     setActionLoading(true);
     setFeedback(null);
     try {
@@ -77,7 +152,22 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
       setFeedback({ type: 'error', message: err.response?.data?.message || "Failed to remove staff." });
     } finally {
       setActionLoading(false);
+      setConfirmDialog({ isOpen: false, uid: null });
     }
+  };
+
+  const handleDeleteClick = (uid: string) => {
+    setConfirmDialog({ isOpen: true, uid });
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmDialog.uid) {
+      handleDelete(confirmDialog.uid);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDialog({ isOpen: false, uid: null });
   };
 
   const startEdit = (staff: StaffMember) => {
@@ -234,7 +324,7 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
                         
                         {staff.role !== 'manager' && (
                           <button 
-                            onClick={() => handleDelete(staff.uid)}
+                            onClick={() => handleDeleteClick(staff.uid)}
                             disabled={actionLoading}
                             className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                             title="Remove Staff"
@@ -251,6 +341,17 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
           </div>
         )}
       </div>
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Remove Staff Member"
+        message="Are you sure you want to remove this staff member? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="Remove"
+        cancelText="Cancel"
+      />
     </div>
   );
 };
