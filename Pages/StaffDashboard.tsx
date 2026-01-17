@@ -14,7 +14,7 @@ import ManageTeamModal from "@/components/ManageTeamModal"
 
 const StaffDashboard: React.FC = () => {
   const [backendOrders, setBackendOrders] = useState<any[]>([])
-  const [showAddStaff, setShowAddStaff] = useState(false)
+  const [, setShowAddStaff] = useState(false)
   const [showManageTeam, setShowManageTeam] = useState(false);
 
   const { deals, cafeterias, managedCafeteriaId, staffProfile, toggleCafeteriaStatus } = useApp()
