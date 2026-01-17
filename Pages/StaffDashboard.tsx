@@ -2,19 +2,21 @@
 
 import React, { useEffect, useState } from "react"
 import { useApp } from "../context/AppContext"
-import { 
-  Users, Package, Star, Power, Plus, 
-  TrendingUp, Activity, Edit2, Trash2, X 
+import {  Package, Star, Power, Plus, 
+  TrendingUp, Activity, Edit2, Trash2, X ,Users,Settings
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { auth } from "@/firebaseConfig"
 import api from "@/services/api"
 import AddStaffModal from "@/components/AddStaffModal"
+import ManageTeamModal from "@/components/ManageTeamModal"
+
 
 const StaffDashboard: React.FC = () => {
   const [backendOrders, setBackendOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddStaff, setShowAddStaff] = useState(false)
+  const [showManageTeam, setShowManageTeam] = useState(false);
 
   const { deals, cafeterias, managedCafeteriaId, staffProfile, toggleCafeteriaStatus } = useApp()
 
@@ -103,22 +105,38 @@ const StaffDashboard: React.FC = () => {
         </div>
 
         {/* Manager Actions */}
+        {/* Manager Actions */}
         {staffProfile.role === "manager" && (
           <div>
-             <div className="flex items-center justify-between mb-4">
-              <h3 style={{ fontFamily: 'Geom' }} className="text-lg font-bold text-gray-900">
+            <div className="flex items-center justify-between mb-4">
+              <h3 style={{ fontFamily: "Geom" }} className="text-lg font-bold text-gray-900">
                 Staff Management
               </h3>
             </div>
-            <button
-              onClick={() => setShowAddStaff(true)}
-              className="w-full bg-black text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
-            >
-              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                <Plus size={14} strokeWidth={3} />
-              </div>
-              <span className="font-semibold text-sm">Register New Staff</span>
-            </button>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {/* Existing Add Button */}
+              <button
+                onClick={() => setShowAddStaff(true)}
+                className="bg-black text-white py-4 rounded-xl flex flex-col items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm"
+              >
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <Plus size={16} strokeWidth={3} />
+                </div>
+                <span className="font-semibold text-sm">Add Staff</span>
+              </button>
+
+              {/* NEW: Manage Team Button */}
+              <button
+                onClick={() => setShowManageTeam(true)}
+                className="bg-white border border-gray-200 text-gray-900 py-4 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
+                  <Users size={16} strokeWidth={2} />
+                </div>
+                <span className="font-semibold text-sm">View Team</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -215,6 +233,33 @@ const StaffDashboard: React.FC = () => {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+      {/* 4. Manage Team Modal Popup */}
+      <AnimatePresence>
+        {showManageTeam && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowManageTeam(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            
+            {/* Centered Modal Content */}
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+            >
+              <ManageTeamModal onClose={() => setShowManageTeam(false)} />
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
