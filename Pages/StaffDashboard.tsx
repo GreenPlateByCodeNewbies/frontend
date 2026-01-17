@@ -222,7 +222,7 @@ const StaffDashboard: React.FC = () => {
                   </button>
                 </div>
                 
-                {/* Your Existing Form Component Component Goes Here */}
+                {/* Your Existing Form Component Goes Here */}
                 <div className="p-6">
                   <AddStaffModal onClose={() => setShowAddStaff(false)} />
                 </div>
