@@ -92,7 +92,9 @@ const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ onClose }) => {
   };
 
   const saveEdit = async (uid: string) => {
-    if (!editEmail.includes("@")) {
+    // Robust email validation using standard regex pattern
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editEmail)) {
       setFeedback({ type: 'error', message: "Please enter a valid email." });
       return;
     }
