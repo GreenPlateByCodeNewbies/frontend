@@ -14,7 +14,6 @@ import ManageTeamModal from "@/components/ManageTeamModal"
 
 const StaffDashboard: React.FC = () => {
   const [backendOrders, setBackendOrders] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [showAddStaff, setShowAddStaff] = useState(false)
   const [showManageTeam, setShowManageTeam] = useState(false);
 
@@ -32,8 +31,6 @@ const StaffDashboard: React.FC = () => {
         setBackendOrders(res.data.orders || [])
       } catch (err) {
         console.error("Failed to fetch staff orders", err)
-      } finally {
-        setLoading(false)
       }
     }
     fetchOrders()
