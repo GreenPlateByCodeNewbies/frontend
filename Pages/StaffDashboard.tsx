@@ -182,10 +182,18 @@ const StaffDashboard: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* 3. Add Staff Modal Popup */}
+                   <button
+                     type="button"
+                     onClick={() => window.alert("Edit menu item functionality will be available soon.")}
+                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                   >
+                     <Edit2 size={16} />
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => window.alert("Delete menu item functionality will be available soon.")}
+                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors"
+                   >
       <AnimatePresence>
         {showAddStaff && (
           <>
