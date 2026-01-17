@@ -84,7 +84,6 @@ const Splash: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
             transition={{ duration: 0.5 }}
             className="flex-1 flex flex-col p-10 pt-16 z-10 bg-[#FDFDFD]"
           >
-            {/* ... Rest of your Main App Code (Header, Cards, Button) ... */}
             <header className="flex items-center justify-between mb-16">
                <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center shadow-[0_10px_30px_rgba(22,163,74,0.2)]">
