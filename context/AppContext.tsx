@@ -159,8 +159,6 @@ useEffect(() => {
   const unsub = auth.onAuthStateChanged(async (user) => {
     if (!user) return;
 
-    await user.getIdToken(true);
-
     // Only students load orders
     if (userRole === UserRole.USER) {
       loadOrders();
