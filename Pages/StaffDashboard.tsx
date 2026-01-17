@@ -105,7 +105,7 @@ const StaffDashboard: React.FC = () => {
           />
           <StatCard 
             label="Revenue" 
-            value="₹--" 
+            value="Coming Soon" 
             icon={<TrendingUp size={18} className="text-purple-600" />} 
           />
         </div>
