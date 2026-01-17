@@ -145,7 +145,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     );
   };
 
-  //on logout
+  // Reset application state on user logout
   const resetApp = () => {
     setUserRole(null);
     setStaffProfile(null);
