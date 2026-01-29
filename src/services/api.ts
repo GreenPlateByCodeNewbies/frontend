@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 
 export const API_BASE_URL =
   Capacitor.isNativePlatform()
-    ? 'http://10.93.192.254:8000'
+    ? 'http://10.193.158.95:8000'
     : import.meta.env.VITE_API_BASE_URL;
 
 
@@ -94,3 +94,18 @@ export const verifyPickup = async (orderId: string, pickupCode: string) =>
     order_id: orderId,
     pickup_code: pickupCode,
   })).data;
+
+export const cancelOrder = async (orderId: string) => 
+  (await api.post(`/user/order/${orderId}/cancel`)).data;
+
+export const getDiscountedFeed = async () => 
+  (await api.get('/user/feed/discounted')).data;
+
+export const buyResaleItem = async (resaleId: string) =>
+  (await api.post(`/user/reasle/${resaleId}/buy`)).data
+
+export const getStallResaleItems = async () =>  
+  (await api.get('/staff/resale/items')).data;
+
+export const updateResalePrice  = async (resaleId:string, newPrice: number) =>
+  (await api.patch(`/staff/resale/${resaleId}/price`,{new_price:newPrice })).data

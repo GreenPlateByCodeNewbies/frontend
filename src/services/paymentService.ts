@@ -5,6 +5,16 @@ interface CartItem {
   quantity: number;
 }
 
+// ✅ 1. Define a strict interface for the result
+export interface PaymentResult {
+  success: boolean;
+  paymentId?: string;
+  orderId?: string;
+  signature?: string;
+  internalOrderId?: string;
+  error?: string;
+}
+
 declare global {
   interface Window {
     Razorpay: any;
@@ -29,37 +39,25 @@ const loadRazorpaySDK = (): Promise<void> => {
   });
 };
 
-export const initiatePayment = async (
-  cartItems: CartItem[],
-  stallId: string,
+/**
+ * Shared helper to open the Razorpay Modal.
+ */
+const openRazorpay = async (
+  orderData: any,
   userEmail: string,
   userName: string
-): Promise<{
-  success: boolean;
-  paymentId?: string;
-  orderId?: string;
-  signature?: string;
-  internalOrderId?: string;
-  error?: string;
-}> => {
+): Promise<PaymentResult> => { // ✅ 2. Use the interface here
   try {
-    console.log('🔄 Creating payment order...', { stallId, cartItems });
-
-    // 1️⃣ Create order from backend
-    const orderData = await createPaymentOrder(stallId, cartItems);
-
-    // 2️⃣ Load Razorpay SDK
     await loadRazorpaySDK();
 
-    // 3️⃣ Open Razorpay checkout
     return await new Promise((resolve) => {
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // ✅ FROM ENV
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'GreenPlate',
-        description: 'Food Order Payment',
-        order_id: orderData.id,
+        description: orderData.notes?.type === 'RESALE' ? 'Resale Item Payment' : 'Food Order Payment',
+        order_id: orderData.id, 
 
         prefill: {
           email: userEmail,
@@ -96,11 +94,54 @@ export const initiatePayment = async (
       rzp.open();
     });
   } catch (error: any) {
-    console.error('❌ Payment Error:', error);
-
+    console.error('❌ Razorpay Error:', error);
     return {
       success: false,
-      error: error?.message || 'Payment failed',
+      error: error?.message || 'Failed to open payment gateway',
+    };
+  }
+};
+
+/**
+ * 1. REGULAR CHECKOUT
+ */
+export const initiatePayment = async (
+  cartItems: CartItem[],
+  stallId: string,
+  userEmail: string,
+  userName: string
+): Promise<PaymentResult> => { // ✅ 3. Explicit return type
+  try {
+    console.log('🔄 Creating payment order...', { stallId, cartItems });
+
+    const orderData = await createPaymentOrder(stallId, cartItems);
+    return await openRazorpay(orderData, userEmail, userName);
+
+  } catch (error: any) {
+    console.error('❌ Payment Init Error:', error);
+    return {
+      success: false,
+      error: error?.message || 'Payment initiation failed',
+    };
+  }
+};
+
+/**
+ * 2. RESALE CHECKOUT
+ */
+export const initiateResalePayment = async (
+  resaleConfig: any, 
+  userEmail: string,
+  userName: string
+): Promise<PaymentResult> => { // ✅ 4. Explicit return type
+  try {
+    console.log('🔄 Initiating resale payment...', resaleConfig);
+    return await openRazorpay(resaleConfig, userEmail, userName);
+  } catch (error: any) {
+    console.error('❌ Resale Payment Error:', error);
+    return {
+      success: false,
+      error: error?.message || 'Resale payment failed',
     };
   }
 };

@@ -1,12 +1,11 @@
-// MyOrders.tsx
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   QrCode, MapPin, ShoppingBag, BellRing, ChefHat, 
-  CheckCircle2, X, ChevronRight, UtensilsCrossed, Store 
+  CheckCircle, X, Store, AlertTriangle, RefreshCcw, Loader2, Info
 } from 'lucide-react';
+import { cancelOrder } from '@/services/api';
 
 const getOrderTotal = (items: any[]) => {
   if (!items || items.length === 0) return 0;
@@ -18,10 +17,26 @@ const getItemsCount = (items: any[]) => {
   return items.reduce((sum, item) => sum + item.quantity, 0);
 };
 
+// Notification Interface
+interface NotificationState {
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
 const MyOrders: React.FC = () => {
   const { orders, loadOrders } = useApp();
   const [activeTab, setActiveTab] = useState<'Active' | 'Past'>('Active');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // ✅ Notification State
+  const [notification, setNotification] = useState<NotificationState | null>(null);
+
+  // ✅ Toast Helper
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   // Auto-refresh orders every 5 seconds
   useEffect(() => {
@@ -29,7 +44,28 @@ const MyOrders: React.FC = () => {
     return () => clearInterval(interval);
   }, [loadOrders]);
 
-  // ---  FILTERING LOGIC ---
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm("Are you sure? If the order is READY, only 70% will be refunded.")) return;
+    
+    setIsCancelling(true);
+    try {
+      const res = await cancelOrder(orderId);
+      // ✅ SUCCESS TOAST
+      showNotification(res.message, 'success'); 
+      setSelectedId(null);
+      loadOrders(); // Refresh to update status
+    } catch (error: any) {
+      // ❌ ERROR TOAST
+      showNotification(
+        error.response?.data?.message || 'Cancellation Failed', 
+        'error'
+      );
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // --- FILTERING ---
   const filteredOrders = orders.filter(o => {
     const isPast = ['Claimed', 'Completed', 'Cancelled'].includes(o.status as string);
     if (activeTab === 'Active') return !isPast;
@@ -38,7 +74,7 @@ const MyOrders: React.FC = () => {
 
   const selectedOrder = orders.find(o => o.id === selectedId);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll
   useEffect(() => {
     if (selectedId) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'unset';
@@ -46,6 +82,14 @@ const MyOrders: React.FC = () => {
   }, [selectedId]);
 
   const renderStatusBadge = (status: string) => {
+    if (status === 'Cancelled') {
+      return (
+        <div className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-red-50 text-red-600">
+          <X size={12} />
+          <span className="text-xs font-semibold">Cancelled</span>
+        </div>
+      );
+    }
     if (status === 'Ready') {
       return (
         <div className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-emerald-50 text-emerald-600">
@@ -65,7 +109,7 @@ const MyOrders: React.FC = () => {
     if (['Claimed', 'Completed'].includes(status)) {
       return (
         <div className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-gray-100 text-gray-600">
-          <CheckCircle2 size={12} />
+          <CheckCircle size={12} />
           <span className="text-xs font-semibold">Completed</span>
         </div>
       );
@@ -78,15 +122,39 @@ const MyOrders: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      className="flex flex-col h-full bg-gray-50 relative" 
-      style={{ fontFamily: 'Geom' }}
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full bg-gray-50 relative" style={{ fontFamily: 'Geom' }}>
       
+      {/* 🔔 TOAST NOTIFICATION POPUP */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className={`fixed top-6 left-4 right-4 z-[70] p-4 rounded-2xl shadow-xl flex items-center gap-3 ${
+              notification.type === 'success' ? 'bg-emerald-600 text-white' :
+              notification.type === 'error' ? 'bg-red-500 text-white' :
+              'bg-blue-600 text-white'
+            }`}
+          >
+            {notification.type === 'success' && <CheckCircle className="flex-shrink-0" size={24} />}
+            {notification.type === 'error' && <AlertTriangle className="flex-shrink-0" size={24} />}
+            {notification.type === 'info' && <Info className="flex-shrink-0" size={24} />}
+            
+            <div>
+              <p className="text-sm font-bold">{notification.message}</p>
+            </div>
+
+            <button onClick={() => setNotification(null)} className="ml-auto p-1 bg-white/20 rounded-full hover:bg-white/30">
+               <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
-      <div className="px-6 pt-6 pb-4 bg-white z-10 relative">
+      <div className="px-6 pt-6 pb-4 bg-white z-10 relative shadow-sm">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">My Orders</h1>
         <div className="flex gap-4 border-b border-gray-200">
           {(['Active', 'Past'] as const).map(tab => (
@@ -118,7 +186,6 @@ const MyOrders: React.FC = () => {
               {filteredOrders.map(order => {
                 const itemsCount = getItemsCount(order.items);
                 const totalAmount = getOrderTotal(order.items);
-                // FIX: Trust the backend name directly
                 const displayName = order.cafeteriaName || "Unknown Stall";
 
                 return (
@@ -144,7 +211,7 @@ const MyOrders: React.FC = () => {
                         </motion.div>
                       </div>
                       <motion.div layoutId={`myorders-status-${order.id}`}>
-                        {renderStatusBadge(order.status)}
+                        {renderStatusBadge(order.status as string)}
                       </motion.div>
                     </div>
 
@@ -157,10 +224,6 @@ const MyOrders: React.FC = () => {
                         {(order.items?.length || 0) > 2 && (
                           <div className="text-xs text-gray-400 font-medium">+ {(order.items?.length || 0) - 2} more items...</div>
                         )}
-                    </div>
-                    <div className="pt-3 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-emerald-600">
-                      <span>View Details & QR</span>
-                      <ChevronRight size={14} />
                     </div>
                   </motion.div>
                 );
@@ -191,34 +254,47 @@ const MyOrders: React.FC = () => {
                       </motion.div>
                     </div>
                     <motion.div layoutId={`myorders-status-${selectedId}`}>
-                        {renderStatusBadge(selectedOrder.status)}
+                        {renderStatusBadge(selectedOrder.status as string)}
                     </motion.div>
                   </div>
 
-                  {/* Status Messages */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    {['Reserved', 'Payment Pending', 'Paid'].includes(selectedOrder.status) && (
-                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-2">
-                        <UtensilsCrossed size={16} className="text-blue-600 flex-shrink-0" />
-                        <p className="text-xs font-medium text-blue-700">Chef is preparing your order</p>
-                      </div>
-                    )}
-                    {selectedOrder.status === 'Ready' && (
-                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-2">
-                        <BellRing size={16} className="text-emerald-600 flex-shrink-0" />
-                        <p className="text-xs font-medium text-emerald-700">Your order is ready! Show the code below.</p>
-                      </div>
-                    )}
-                    {['Claimed', 'Completed'].includes(selectedOrder.status) && (
-                        <div className="p-3 bg-gray-100 rounded-xl border border-gray-200 flex items-center gap-2">
-                          <CheckCircle2 size={16} className="text-gray-500 flex-shrink-0" />
-                          <p className="text-xs font-medium text-gray-600">This order has been picked up.</p>
+                   {/* 🔴 REFUND INFO SECTION */}
+                   {selectedOrder.status === 'Cancelled' && (selectedOrder as any).refund && (
+                        <div className="mb-6 bg-red-50 border border-red-100 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-2 text-red-700">
+                                <RefreshCcw size={18} />
+                                <h4 className="font-bold text-sm">Refund Details</h4>
+                            </div>
+                            <div className="space-y-1 text-xs text-gray-600">
+                                <div className="flex justify-between">
+                                    <span>Status:</span>
+                                    <span className="font-medium text-gray-900">{(selectedOrder as any).refund.status}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Amount:</span>
+                                    <span className="font-medium text-gray-900">₹{(selectedOrder as any).refund.amount}</span>
+                                </div>
+                                {/* Show Refund ID */}
+                                {(selectedOrder as any).refund.razorpay_refund_id && (
+                                     <div className="flex justify-between">
+                                        <span>Refund ID:</span>
+                                        <span className="font-mono text-gray-900 text-[10px]">{(selectedOrder as any).refund.razorpay_refund_id}</span>
+                                    </div>
+                                )}
+                                {/* Show Bank RRN if completed */}
+                                {(selectedOrder as any).refund.bank_ref && (
+                                     <div className="flex justify-between">
+                                        <span>Bank RRN:</span>
+                                        <span className="font-mono text-green-700 font-bold">{(selectedOrder as any).refund.bank_ref}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2 italic">Refunds typically take 3-5 business days.</p>
                         </div>
                     )}
-                  </motion.div>
                 </div>
 
-                {/* QR Code */}
+                {/* QR Code (Hidden if Cancelled) */}
                 {['Reserved', 'Ready', 'Paid'].includes(selectedOrder.status) && (
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="bg-gray-50 border border-gray-100 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 mb-6 text-center">
                     <div className="w-48 h-48 bg-white rounded-xl flex items-center justify-center border border-gray-100 shadow-sm p-2">
@@ -254,46 +330,40 @@ const MyOrders: React.FC = () => {
                   </div>
                 </motion.div>
 
-                {/* Actions / Status Indicator */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.4 }} 
-                  className="mt-auto pt-2"
-                >
-                  {/* Status Badges Code Here - Same as before */}
+                {/* Actions */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-auto pt-2">
+                   
+                   {/* 🔴 CANCEL BUTTON (Only for active orders) */}
+                   {['Reserved', 'Paid', 'Ready', 'Payment Pending'].includes(selectedOrder.status as string) && (
+                        <div className="mb-4">
+                            <button 
+                                onClick={() => handleCancelOrder(selectedOrder.id)}
+                                disabled={isCancelling}
+                                className="w-full py-3 rounded-xl border-2 border-red-100 text-red-500 font-bold text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                {isCancelling ? <Loader2 size={16} className="animate-spin"/> : <AlertTriangle size={16} />}
+                                Cancel Order
+                            </button>
+                            <p className="text-center text-[10px] text-gray-400 mt-2">
+                                {selectedOrder.status === 'Ready' ? '50% Refund applies for Ready items.' : 'Full Refund applies.'}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Status Display logic for other states */}
                    {selectedOrder.status === 'Ready' && (
                     <div className="w-full py-4 rounded-xl text-sm font-bold bg-emerald-600 text-white flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
                       <BellRing size={20} className="animate-pulse" />
                       <span>Order Ready for Pickup</span>
                     </div>
                   )}
-
-                  {/* CASE 2: PREPARING */}
                   {['Reserved', 'Payment Pending', 'Paid'].includes(selectedOrder.status) && (
                     <div className="w-full py-4 rounded-xl text-sm font-bold bg-blue-600 text-white flex items-center justify-center gap-2 shadow-lg shadow-blue-200">
                       <ChefHat size={20} />
                       <span>Kitchen is Preparing</span>
                     </div>
                   )}
-
-                  {/* CASE 3: COMPLETED */}
-                  {['Claimed', 'Completed'].includes(selectedOrder.status) && (
-                    <div className="w-full py-4 rounded-xl text-sm font-bold bg-gray-100 text-gray-500 border border-gray-200 flex items-center justify-center gap-2">
-                      <CheckCircle2 size={20} />
-                      <span>Order Completed</span>
-                    </div>
-                  )}
-
-                   {/* CASE 4: CANCELLED */}
-                  {(selectedOrder.status as string) === 'Cancelled' && (
-                    <div className="w-full py-4 rounded-xl text-sm font-bold bg-red-50 text-red-500 border border-red-100 flex items-center justify-center gap-2">
-                      <X size={20} />
-                      <span>Order Cancelled</span>
-                    </div>
-                  )}
                 </motion.div>
-
               </div>
             </motion.div>
           </div>
