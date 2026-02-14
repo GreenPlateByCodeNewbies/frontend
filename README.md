@@ -236,7 +236,7 @@ IP Address: 192.168.x.x
 Open:
 
 ```
-src/api/api.ts
+src/services/api.ts
 ```
 
 Update:
