@@ -176,7 +176,7 @@ Update the base URL:
 export const API_BASE_URL =
   Capacitor.isNativePlatform()
     ? 'http://192.168.1.7:8000'
-    : import.meta.env.VITE_API_URL;
+    : import.meta.env.VITE_API_BASE_URL;
 ```
 
 Replace `192.168.1.7` with your actual local IP address.
